@@ -196,7 +196,7 @@ public class TestHbase {
 
     public static void main(String[] args) throws IOException {
         TestHbase testHbase = new TestHbase();
-        testHbase.createConf();
+        TestHbase.createConf();
         // ColumnData columnData =new ColumnData("20210000000003","info","class","2");
         // testHbase.insertData("gaoyong:student",columnData);
         ColumnData row1_columnData1 = new ColumnData("20210000000002", "name", null, "Tom");
@@ -205,29 +205,29 @@ public class TestHbase {
         ColumnData row1_columnData4 = new ColumnData("20210000000002", "score", "understanding", "75");
         ColumnData row1_columnData5 = new ColumnData("20210000000002", "score", "programming", "82");
 
-        ColumnData row1_columnData1 = new ColumnData("20210000000002", "name", null, "Jerry");
-        ColumnData row1_columnData2 = new ColumnData("20210000000002", "info", "student_id", "20210000000002");
-        ColumnData row1_columnData3 = new ColumnData("20210000000002", "info", "class", "1");
-        ColumnData row1_columnData4 = new ColumnData("20210000000002", "score", "understanding", "85");
-        ColumnData row1_columnData5 = new ColumnData("20210000000002", "score", "programming", "67");
+        ColumnData row2_columnData1 = new ColumnData("20210000000002", "name", null, "Jerry");
+        ColumnData row2_columnData2 = new ColumnData("20210000000002", "info", "student_id", "20210000000002");
+        ColumnData row2_columnData3 = new ColumnData("20210000000002", "info", "class", "1");
+        ColumnData row2_columnData4 = new ColumnData("20210000000002", "score", "understanding", "85");
+        ColumnData row2_columnData5 = new ColumnData("20210000000002", "score", "programming", "67");
 
-        ColumnData row2_columnData1 = new ColumnData("20210000000003", "name", null, "Jack");
-        ColumnData row2_columnData2 = new ColumnData("20210000000003", "info", "student_id", "20210000000003");
-        ColumnData row2_columnData3 = new ColumnData("20210000000003", "info", "class", "2");
-        ColumnData row2_columnData4 = new ColumnData("20210000000003", "score", "understanding", "80");
-        ColumnData row2_columnData5 = new ColumnData("20210000000003", "score", "programming", "80");
+        ColumnData row3_columnData1 = new ColumnData("20210000000003", "name", null, "Jack");
+        ColumnData row3_columnData2 = new ColumnData("20210000000003", "info", "student_id", "20210000000003");
+        ColumnData row3_columnData3 = new ColumnData("20210000000003", "info", "class", "2");
+        ColumnData row3_columnData4 = new ColumnData("20210000000003", "score", "understanding", "80");
+        ColumnData row3_columnData5 = new ColumnData("20210000000003", "score", "programming", "80");
 
-        ColumnData row3_columnData1 = new ColumnData("20210000000004", "name", null, "Rose");
-        ColumnData row3_columnData2 = new ColumnData("20210000000004", "info", "student_id", "20210000000004");
-        ColumnData row3_columnData3 = new ColumnData("20210000000004", "info", "class", "2");
-        ColumnData row3_columnData4 = new ColumnData("20210000000004", "score", "understanding", "60");
-        ColumnData row3_columnData5 = new ColumnData("20210000000004", "score", "programming", "61");
+        ColumnData row4_columnData1 = new ColumnData("20210000000004", "name", null, "Rose");
+        ColumnData row4_columnData2 = new ColumnData("20210000000004", "info", "student_id", "20210000000004");
+        ColumnData row4_columnData3 = new ColumnData("20210000000004", "info", "class", "2");
+        ColumnData row4_columnData4 = new ColumnData("20210000000004", "score", "understanding", "60");
+        ColumnData row4_columnData5 = new ColumnData("20210000000004", "score", "programming", "61");
 
-        ColumnData row4_columnData1 = new ColumnData("G20200388040069", "name", null, "张煇");
-        ColumnData row4_columnData2 = new ColumnData("G20200388040069", "info", "student_id", "G20210607040077");
-        ColumnData row4_columnData3 = new ColumnData("G20200388040069", "info", "class", "1");
-        ColumnData row4_columnData4 = new ColumnData("G20200388040069", "score", "understanding", "81");
-        ColumnData row4_columnData5 = new ColumnData("G20200388040069", "score", "programming", "82");
+        ColumnData row5_columnData1 = new ColumnData("G20200388040069", "name", null, "张煇");
+        ColumnData row5_columnData2 = new ColumnData("G20200388040069", "info", "student_id", "G20210607040077");
+        ColumnData row5_columnData3 = new ColumnData("G20200388040069", "info", "class", "1");
+        ColumnData row5_columnData4 = new ColumnData("G20200388040069", "score", "understanding", "81");
+        ColumnData row5_columnData5 = new ColumnData("G20200388040069", "score", "programming", "82");
 
         List<ColumnData> columnDatas = new ArrayList<ColumnData>();
         columnDatas.add(row1_columnData1);
@@ -254,7 +254,13 @@ public class TestHbase {
         columnDatas.add(row4_columnData4);
         columnDatas.add(row4_columnData5);
 
-        testHbase.batchInsrtDatas("zhanghui:student", columnDatas);
+        columnDatas.add(row5_columnData1);
+        columnDatas.add(row5_columnData2);
+        columnDatas.add(row5_columnData3);
+        columnDatas.add(row5_columnData4);
+        columnDatas.add(row5_columnData5);
+
+        TestHbase.batchInsrtDatas("zhanghui:student", columnDatas);
         // testHbase.getDataBykey("zhanghui:student","20210000000001");
         /*
          * ColumnData columnData =new ColumnData("20210000000003","name",null,"Tom");
