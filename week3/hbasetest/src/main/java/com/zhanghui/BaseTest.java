@@ -9,31 +9,12 @@ import java.io.IOException;
 
 public class BaseTest {
 
-    private String rootDir;
-    private String zkServer;
-    private String port;
-    private Configuration conf;
-    private HConnection hConn = null;
-
-    private HBaseConnection(String rootDir,String zkServer,String port) throws IOException{
-        this.rootDir = rootDir;
-        this.zkServer = zkServer;
-        this.port = port;
-
-        conf = HBaseConfiguration.create();
-        conf.set("hbase.rootdir", rootDir);
-        conf.set("hbase.zookeeper.quorum", zkServer);
-        conf.set("hbase.zookeeper.property.clientPort", port);
-
-        hConn = HConnectionManager.createConnection(conf);  
-    }
-
     public static void main(String[] args) throws IOException {
         // 建立连接
         Configuration configuration = HBaseConfiguration.create();
-        configuration.set("hbase.zookeeper.quorum", "127.0.0.1");
+        configuration.set("hbase.zookeeper.quorum", "emr-worker-2.cluster-285604");
         configuration.set("hbase.zookeeper.property.clientPort", "2181");
-        configuration.set("hbase.master", "127.0.0.1:60000");
+        configuration.set("hbase.master", "emr-worker-2.cluster-285604:60000");
         Connection conn = ConnectionFactory.createConnection(configuration);
         Admin admin = conn.getAdmin();
 
@@ -46,17 +27,17 @@ public class BaseTest {
             System.out.println("Table already exists");
         } else {
             HTableDescriptor hTableDescriptor = new HTableDescriptor(tableName);
-            HColumnDescriptor hColumnDescriptor = new HColumnDescriptor("name");
-            hTableDescriptor.addFamily(hColumnDescriptor);
-            HColumnDescriptor hColumnDescriptor = new HColumnDescriptor("info");
-            hTableDescriptor.addFamily(hColumnDescriptor);
+            HColumnDescriptor hColumnDescriptor1 = new HColumnDescriptor("name");
+            hTableDescriptor.addFamily(hColumnDescriptor1);
+            HColumnDescriptor hColumnDescriptor2 = new HColumnDescriptor("info");
+            hTableDescriptor.addFamily(hColumnDescriptor2);
             admin.createTable(hTableDescriptor);
             System.out.println("Table create successful");
         }
 
         // 插入数据
         Put put = new Put(Bytes.toBytes("1")); // row key
-        put.addColumn(Bytes.toBytes("name"), Bytes.toBytes(null), Bytes.toBytes("Jerry")); // col2
+        put.addColumn(Bytes.toBytes("name"), null,Bytes.toBytes("Jerry")); // col2
         put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("student_id"), Bytes.toBytes("20210000000001")); // col2
         put.addColumn(Bytes.toBytes("info"), Bytes.toBytes("class"), Bytes.toBytes("1")); // col3
         conn.getTable(tableName).put(put);
