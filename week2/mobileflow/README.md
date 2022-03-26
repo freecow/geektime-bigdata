@@ -30,3 +30,69 @@ hadoop fs -cat /user/xxx/week2/output/part-r-00000
 hadoop fs -rmr /user/xxx/week2/output
 ```
 
+### 代码说明
+
+pom.xml定义
+
+```xml
+# java版本1.7，Hadoop版本用变量定义
+<properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.7</maven.compiler.source>
+    <maven.compiler.target>1.7</maven.compiler.target>
+    <hadoop.version>3.0.0</hadoop.version>
+  </properties>
+
+# 依赖包
+<dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-common</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-hdfs</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-mapreduce-client-core</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-client</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-yarn-api</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+</dependencies>
+
+# 程序运行时入口类
+<plugin>
+  <artifactId>maven-jar-plugin</artifactId>
+  <version>3.0.2</version>
+  <configuration>
+    <archive>
+      <manifest>
+        <addClasspath>true</addClasspath>
+        <classpathPrefix>lib/</classpathPrefix
+          <mainClass>com.zhanghui.MobileFlowDriver</mainClass>
+      </manifest>
+    </archive>
+  </configuration>
+</plugin>
+```
+
+Mapper实现
+
