@@ -11,33 +11,33 @@ public class MobileFlowDriver {
 
     public static void main(String[] args) throws Exception {
 
-        // 1.获取配置信息
+        // Config get
         Configuration conf = new Configuration();
         Job job = Job.getInstance(conf);
 
-        // 2.获取jar包信息
+        // Jar class
         job.setJarByClass(MobileFlowDriver.class);
 
-        // 3.配置mapper、reducer类
+        // mapper+reducer class
         job.setMapperClass(MobileFlowMapper.class);
         job.setReducerClass(MobileFlowReducer.class);
 
-        // 4.配置mapper输出key、value值
+        // mapper output key+value
         job.setMapOutputKeyClass(Text.class);
         job.setMapOutputValueClass(MobileFlowBean.class);
 
-        // 5.配置输出key、value值
+        // output key+value
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(MobileFlowBean.class);
 
-        // 设置Reducenum，设置为1时输出到一个文件part-r-00000
+        // Reducenum args
         job.setNumReduceTasks(Integer.parseInt(args[2]));
 
-        // 6.配置输入路径和输出路径
+        // Input path & output path args
         FileInputFormat.setInputPaths(job, new Path(args[0]));
         FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
-        // 7.提交
+        // Submit Job
         boolean result = job.waitForCompletion(true);
         System.exit(result ? 0 : 1);
     }

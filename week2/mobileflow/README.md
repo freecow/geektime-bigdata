@@ -2,6 +2,8 @@
 
 上传数据文件HTTP_20130313143750.dat、运行文件mobileflow-1.0-SNAPSHOT.jar到服务器的home目录
 
+
+
 ### 上传数据文件
 
 在hdfs分区上创建目录并上传数据文件
@@ -15,84 +17,51 @@ hadoop fs -mkdir /user/zhanghui/week2/input
 hadoop fs -put HTTP_20130313143750.dat /user/zhanghui/week2/input
 ```
 
+
+
 ### 运行MapReduce
 
 ```
 # 运行jar程序
 # 参数1为输入input目录里的数据文件，参数2为输入到output目录，参数3表示只调用1个Reduce
 hadoop jar ./mobileflow-1.0-SNAPSHOT.jar /user/zhanghui/week2/input/HTTP_20130313143750.dat /user/zhanghui/week2/output 1
+```
 
+运行过程
+
+![image-20220326194450458](https://tva1.sinaimg.cn/large/e6c9d24ely1h0niun47zvj20nc0i3n2s.jpg)
+
+
+
+### 显示结果
+
+```
 # 运行完毕后显示结果
-hadoop fs -ls /user/xxx/week2/output
-hadoop fs -cat /user/xxx/week2/output/part-r-00000
+hadoop fs -ls /user/zhanghui/week2/output
+hadoop fs -cat /user/zhanghui/week2/output/part-r-00000
 
 # 删除目录
-hadoop fs -rmr /user/xxx/week2/output
+hadoop fs -rmr /user/zhanghui/week2/output
 ```
+
+![image-20220326194614201](https://tva1.sinaimg.cn/large/e6c9d24ely1h0niw2z6xjj20mu0chmyr.jpg)
+
+
 
 ### 代码说明
 
-pom.xml定义
+#### pom.xml定义
 
-```xml
-# java版本1.7，Hadoop版本用变量定义
-<properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <maven.compiler.source>1.7</maven.compiler.source>
-    <maven.compiler.target>1.7</maven.compiler.target>
-    <hadoop.version>3.0.0</hadoop.version>
-  </properties>
+![image-20220326192217936](https://tva1.sinaimg.cn/large/e6c9d24ely1h0ni783gp5j20eq0h8q4z.jpg)
 
-# 依赖包
-<dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <version>${hadoop.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-hdfs</artifactId>
-      <version>${hadoop.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-mapreduce-client-core</artifactId>
-      <version>${hadoop.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-client</artifactId>
-      <version>${hadoop.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-yarn-api</artifactId>
-      <version>${hadoop.version}</version>
-    </dependency>
-</dependencies>
+#### Mapper实现
 
-# 程序运行时入口类
-<plugin>
-  <artifactId>maven-jar-plugin</artifactId>
-  <version>3.0.2</version>
-  <configuration>
-    <archive>
-      <manifest>
-        <addClasspath>true</addClasspath>
-        <classpathPrefix>lib/</classpathPrefix
-          <mainClass>com.zhanghui.MobileFlowDriver</mainClass>
-      </manifest>
-    </archive>
-  </configuration>
-</plugin>
-```
+![image-20220326192259385](https://tva1.sinaimg.cn/large/e6c9d24ely1h0ni7w3stlj20kh0i3wgt.jpg)
 
-Mapper实现
+#### Reducer实现
 
+![image-20220326193942858](https://tva1.sinaimg.cn/large/e6c9d24ely1h0nipcc152j20ob0eidhu.jpg)
+
+#### 主程序
+
+![image-20220326194110437](https://tva1.sinaimg.cn/large/e6c9d24ely1h0niqtbtfwj20o20lcdj8.jpg)
