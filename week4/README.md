@@ -123,7 +123,12 @@ select * from q1;
 ```
 
 **运行结果：**
+
+
+
 ![q1](https://tva1.sinaimg.cn/large/e6c9d24ely1h0lgohwxikj20n90mjdkr.jpg)
+
+
 
 ### 题目 2
 
@@ -148,7 +153,12 @@ select * from q2;
 ```
 
 **运行结果：**
+
+
+
 ![q2](https://tva1.sinaimg.cn/large/e6c9d24ely1h0lgow34jej21h80saqdc.jpg)
+
+
 
 ### 题目 3
 
@@ -166,6 +176,9 @@ order by total desc
 limit 1;
 ```
 运行结果：
+
+
+
 ![s1](https://tva1.sinaimg.cn/large/e6c9d24ely1h0lgp62oi9j21460bognb.jpg)
 
 第二步 根据第一步中求出的女性user_id作为where过滤条件，以其看过的电影评分rate作为排序条件进行排序，求出评分最高的10部电影
@@ -180,6 +193,9 @@ limit 10;
 select * from q3a;
 ```
 运行结果：
+
+
+
 ![s2](https://tva1.sinaimg.cn/large/e6c9d24ely1h0lgpemtj0j21480k0q5b.jpg)
 
 第三步 求出第二步中得出的10部电影的平均电影评分
@@ -196,4 +212,7 @@ group by r.movie_id,m.movie_name;
 select * from q3b;
 ```
 运行结果：
+
+
+
 ![s3](https://tva1.sinaimg.cn/large/e6c9d24ely1h0lgplnd9bj21im0i4aeq.jpg)
