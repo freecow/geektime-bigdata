@@ -144,7 +144,7 @@ join h_user u on r.user_id=u.user_id
 join h_movie m on r.movie_id=m.movie_id 
 where u.sex="M" 
 group by m.movie_name 
-having total >= 50
+having total > 50
 order by avgrate desc 
 limit 10;
 
@@ -154,9 +154,7 @@ select * from q2;
 
 **运行结果：**
 
-
-
-![q2](https://tva1.sinaimg.cn/large/e6c9d24ely1h0lgow34jej21h80saqdc.jpg)
+![image-20220413195707118](https://tva1.sinaimg.cn/large/e6c9d24ely1h18cd0cus6j21kq0u0k26.jpg)
 
 
 
