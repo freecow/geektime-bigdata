@@ -102,6 +102,8 @@ build/sbt package -Phive -Phive-thriftserver
 - ReplaceExceptWithAntiJoin
 - FoldablePropagation
 
+
+
 ## 创建示例数据表
 
 ### 创建外部json数据文件
@@ -329,4 +331,264 @@ Time taken: 0.985 seconds, Fetched 5 row(s)
   bin/spark-sql --jars my.jar --conf spark.sql.extensions=com.jikeshijian.MySparkSessionExtension
   ```
 
-  
+
+
+
+## 代码说明
+
+创建项目CustomSparkExtension
+
+```bash
+.
+├── pom.xml
+├── src
+│   ├── main
+│   │   ├── java
+│   │   ├── resources
+│   │   └── scala
+│   │       ├── MyPushDown.scala
+│   │       └── MySparkSessionExtension.scala
+│   └── test
+│       └── java
+└── target
+```
+
+MyPushDown.scala
+
+```scala
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.expressions.SubqueryExpression
+import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project, Sort}
+import org.apache.spark.sql.catalyst.rules._
+case class MyPushDown(spark: SparkSession) extends Rule[LogicalPlan] {
+
+  private def removeTopLevelSort(plan: LogicalPlan): LogicalPlan = {
+    plan match {
+      case Sort(_, _, child) => child
+      case Project(fields, child) => Project(fields, removeTopLevelSort(child))
+      case other => other
+    }
+  }
+
+  def apply(plan: LogicalPlan): LogicalPlan = plan transform {
+    case Sort(_, _, child) => {
+      print("Use Define MyPushDown")
+      child
+    }
+    case other => {
+      print("Use Define MyPushDown")
+      logWarning(s"Optimization rule '${ruleName}' was not excluded from the optimizer")
+      other
+    }
+  }
+}
+```
+
+MySparkSessionExtension.scala
+
+```scala
+import org.apache.spark.sql.SparkSessionExtensions
+
+class MySparkSessionExtension extends (SparkSessionExtensions => Unit)  {
+  override def apply(extensions: SparkSessionExtensions): Unit =  {
+    extensions.injectOptimizerRule { session =>
+      new MyPushDown(session)
+    }
+  }
+}
+```
+
+pom.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.zhanghui.spark.extension</groupId>
+    <artifactId>CustomSparkExtension</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <properties>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <scala.version>2.13.8</scala.version>
+        <spark.version>3.1.3</spark.version>
+        <encoding>UTF-8</encoding>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.scala-lang</groupId>
+            <artifactId>scala-library</artifactId>
+            <version>${scala.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-core_2.12</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-sql_2.12</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.spark</groupId>
+            <artifactId>spark-hive_2.12</artifactId>
+            <version>${spark.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.scopt</groupId>
+            <artifactId>scopt_2.12</artifactId>
+            <version>3.5.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.scalatest</groupId>
+            <artifactId>scalatest_2.12</artifactId>
+            <version>3.2.0</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+    <pluginManagement>
+        <plugins>
+            <!-- 编译scala的插件 -->
+            <plugin>
+                <groupId>net.alchim31.maven</groupId>
+                <artifactId>scala-maven-plugin</artifactId>
+                <version>3.2.2</version>
+            </plugin>
+            <!-- 编译java的插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.5.1</version>
+            </plugin>
+        </plugins>
+    </pluginManagement>
+    <plugins>
+        <plugin>
+            <groupId>net.alchim31.maven</groupId>
+            <artifactId>scala-maven-plugin</artifactId>
+            <executions>
+                <execution>
+                    <id>scala-compile-first</id>
+                    <phase>process-resources</phase>
+                    <goals>
+                        <goal>add-source</goal>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>scala-test-compile</id>
+                    <phase>process-test-resources</phase>
+                    <goals>
+                        <goal>testCompile</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <executions>
+                <execution>
+                    <phase>compile</phase>
+                    <goals>
+                        <goal>compile</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
+
+    </plugins>
+    </build>
+
+</project>
+```
+
+打包生成CustomSparkExtension-1.0-SNAPSHOT.jar
+
+
+
+## 运行测试
+
+运行spark-sql带上jar参数
+
+```bash
+bin/spark-sql --jars CustomSparkExtension-1.0-SNAPSHOT.jar --conf spark.sql.extensions=MySparkSessionExtension
+```
+
+进入spark-sql控制台
+
+```bash
+spark-sql> set spark.sql.planChangeLog.level=WARN;
+
+# 创建view并查询
+spark-sql> drop view test1;
+spark-sql> create view test1(c1) as values (1),(2),(3);
+spark-sql> select * from test1;
+```
+
+查看log，可看到自定义规则信息Optimization rule 'MyPushDown' was not excluded from the optimizer
+
+```bash
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Pullup Correlated Expressions has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Subquery has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Replace Operators has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Aggregate has no effect.
+Use Define MyPushDown22/05/05 07:54:44 WARN MyPushDown: Optimization rule 'MyPushDown' was not excluded from the optimizer
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Operator Optimization before Inferring Filters has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Infer Filters has no effect.
+Use Define MyPushDown22/05/05 07:54:44 WARN MyPushDown: Optimization rule 'MyPushDown' was not excluded from the optimizer
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Operator Optimization after Inferring Filters has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Push extra predicate through join has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Early Filter and Projection Push-Down has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Join Reorder has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Eliminate Sorts has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Decimal Optimizations has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Distinct Aggregate Rewrite has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Object Expressions Optimization has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch LocalRelation has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Check Cartesian Products has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch RewriteSubquery has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch NormalizeFloatingNumbers has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch ReplaceUpdateFieldsExpression has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Optimize Metadata Only Query has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch PartitionPruning has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Pushdown Filters from PartitionPruning has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Cleanup filters that cannot be pushed down has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Extract Python UDFs has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch User Provided Optimizers has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: 
+=== Metrics of Executed Rules ===
+Total number of runs: 154
+Total time: 0.004047304 seconds
+Total number of effective runs: 4
+Total time of effective runs: 0.001734547 seconds
+      
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch Preparations has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: Batch CleanExpressions has no effect.
+22/05/05 07:54:44 WARN PlanChangeLogger: 
+=== Metrics of Executed Rules ===
+Total number of runs: 1
+Total time: 5.356E-6 seconds
+Total number of effective runs: 0
+Total time of effective runs: 0.0 seconds
+      
+1
+2
+3
+Time taken: 0.45 seconds, Fetched 3 row(s)
+```
+

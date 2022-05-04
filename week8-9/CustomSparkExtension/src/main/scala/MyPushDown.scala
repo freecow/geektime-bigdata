@@ -14,12 +14,12 @@ case class MyPushDown(spark: SparkSession) extends Rule[LogicalPlan] {
 
   def apply(plan: LogicalPlan): LogicalPlan = plan transform {
     case Sort(_, _, child) => {
-      print("custom MyPushDown")
+      print("Use Define MyPushDown")
       child
     }
     case other => {
-      print("custom MyPushDown")
-      logWarning(s"Optimization batch is excluded from the MyPushDown optimizer")
+      print("Use Define MyPushDown")
+      logWarning(s"Optimization rule '${ruleName}' was not excluded from the optimizer")
       other
     }
   }
