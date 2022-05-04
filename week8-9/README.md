@@ -293,3 +293,40 @@ Shanxi	199	2022-05-02 19:08:51.959
 Time taken: 0.985 seconds, Fetched 5 row(s)
 ```
 
+
+
+# 作业三：实现自定义优化规则（静默规则）
+
+## 作业要求
+
+- 第一步：实现自定义规则 (静默规则，通过 set spark.sql.planChangeLog.level=WARN，确认执行到就行)
+
+  ```java
+  case class MyPushDown(spark: SparkSession) extends Rule[LogicalPlan] {
+   def apply(plan: LogicalPlan): LogicalPlan = plan transform { .... }
+  }
+  ```
+
+  
+
+- 第二步：创建自己的 Extension 并注入
+
+  ```java
+  class MySparkSessionExtension extends (SparkSessionExtensions => Unit) {
+   override def apply(extensions: SparkSessionExtensions): Unit = { 
+    extensions.injectOptimizerRule { session =>
+     new MyPushDown(session) 
+    }
+   } 
+  }
+  ```
+
+  
+
+- 第三步：通过 spark.sql.extensions 提交
+
+  ```bash
+  bin/spark-sql --jars my.jar --conf spark.sql.extensions=com.jikeshijian.MySparkSessionExtension
+  ```
+
+  
