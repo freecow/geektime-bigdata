@@ -1,9 +1,22 @@
-# 作业一：为Spark SQL添加一条自定义命令
+# 作业一：实现 Compact table command
 
 ## 作业要求
 
-- SHOW VERSION；
-- 显示当前Spark版本和Java版本
+要求：
+
+添加 compact table 命令，用于合并小文件，例如表 test1 总共有 50000 个文件，每个 1MB，通过该命令，合成为 500 个文件，每个约 100MB。
+
+语法：
+
+COMPACT TABLE table_identify [partitionSpec] [INTO fileNum FILES]；
+
+说明：
+
+基本要求是完成以下功能：COMPACT TABLE test1 INTO 500 FILES；
+
+如果添加 partitionSpec，则只合并指定的 partition 目录的文件；
+
+如果不加 into fileNum files，则把表中的文件合并成 128MB 大小。
 
 ## 代码说明
 
@@ -15,32 +28,42 @@
 
 ```xml
 statement
-    | SHOW VERSION                                                     #showVersion
-ansiNonReserved
-    | VERSION
-nonReserved
-    | VERSION
-//--SPARK-KEYWORD-LIST-START
-VERSION: 'VERSION';
+    | COMPACT TABLE target=tableIdentifier partitionNames? (INTO fileNum=INTEGER_VALUE identifier)?   #compactTable
+
+partitionNames
+    : PARTITION '(' partitionNameSpec (',' partitionNameSpec)* ')'
+    ;
+
+partitionNameSpec
+    : IDENTIFIER('-'number)?
+    ;
 ```
-### 修改SparkSqlParser.scala
+### 编译DSL
 
-路径/sql/core/src/main/scala/org/apache/spark/sql/execution/SparkSqlParser.scala
-
-添加一个visitShowVersion()方法，在visitShowVersion()方法中去调用ShowVersionCommand()样例类
-
-```java
-  override def visitShowVersion(ctx: ShowVersionContext): LogicalPlan = withOrigin(ctx) {
-    ShowVersionCommand()
-  }
-```
-### 添加ShowVersionCommand.scala
-
-路径sql/core/src/main/scala/org/apache/spark/sql/execution/command/ShowVersionCommand.scala
-
-创建ShowVersionCommand()样例类，定义调用方法，输出Spark和Java版本
+在sql/catalyst/target/generated-sources/antlr4/org/apache/spark/sql/catalyst/parser/SqlBaseParser.java生成CompactTableContext类
 
 ```bash
+build/mvn org.antlr:antlr4-maven-plugin:4.8:antlr4
+```
+
+### 修改SparkSqlParser.scala
+
+路径sql/core/src/main/scala/org/apache/spark/sql/execution/SparkSqlParser.scala
+
+添加一个visitCompactTable()方法，在visitCompactTable()方法中去调用CompactTableCommand()样例类
+
+```scala
+override def visitCompactTable(ctx: SqlBaseParser.CompactTableContext): LogicalPlan = withOrigin(ctx){
+  CompactTableCommand(ctx.tableIdentifier(), ctx.partitionSpec(), ctx.fileNum)
+  }
+```
+### 添加CompactTableCommand.scala
+
+路径sql/core/src/main/scala/org/apache/spark/sql/execution/command/CompactTableCommand.scala
+
+创建CompactTableCommand()样例类，定义调用方法，输出Spark和Java版本
+
+```scala
 /*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -64,35 +87,99 @@ import org.apache.spark.sql.{Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.types.StringType
 
-case class ShowVersionCommand() extends RunnableCommand{
-
-  override val output: Seq[Attribute] =
-    Seq(AttributeReference("version", StringType, nullable = true)())
-
+case class CompactTableCommand(
+                                tableIdentifier: TableIdentifierContext,
+                                partitionSpec: PartitionSpecContext,
+                                fileNum: Token
+                              )  extends LeafRunnableCommand with Logging{
+  override val output: Seq[Attribute] = Seq(AttributeReference("result", StringType)())
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    val sparkVersion = sparkSession.version
-    val javaVersion = System.getProperty("java.version")
-    val outputString = "Spark Version: %s, Java Version: %s"
-      .format(sparkVersion, javaVersion)
 
-    Seq(Row(outputString))
+    val dbname = if (tableIdentifier.db != null && tableIdentifier.db.getText != null) {
+        tableIdentifier.db.getText
+      } else {
+        sparkSession.catalog.currentDatabase
+    }
+
+    val tbname = tableIdentifier.table.getText
+    val filesNum = if (fileNum == null) 0 else fileNum.getText.toInt
+    logWarning {
+      "currentDatabase:" + dbname + " table:" + tbname + " fileNum:" + filesNum
+    }
+
+    val catalog = sparkSession.sessionState.catalog
+    val tableId = TableIdentifier(tbname, Option(dbname))
+    val catalogTable = catalog.getTempViewOrPermanentTableMetadata(tableId)
+    val location = catalogTable.location.toString
+    val inputFormat = if (catalogTable != null) {
+      catalogTable.storage.inputFormat.get
+    } else {
+      "UNKNOWN storage format"
+    }
+    val dataFormat = getDataFormat(inputFormat)
+
+    sparkSession.sparkContext
+      .setCheckpointDir(location.substring(0, location.lastIndexOf("/")) + "tmp")
+
+    val df = sparkSession.read.format(dataFormat)
+      .option("partitionOverwriteMode", "dynamic")
+      .load(location).checkpoint()
+    
+    val newDF = if (filesNum > 0) df.repartition(filesNum) else df
+
+    newDF.write.format(dataFormat)
+      .mode(SaveMode.Overwrite).save(location)
+
+    Seq.empty[Row]
   }
 
+  def getDataFormat(inputFormat: String): String = {
+    inputFormat match {
+      case "org.apache.hadoop.hive.ql.io.parquet.MapredParquetInputFormat" => "parquet"
+      case "org.apache.hadoop.mapred.TextInputFormat" => "text"
+      case _ => throw new RuntimeException("Not supported compact format:" + inputFormat)
+    }
+  }
 }
 ```
 ### 编译
 
 ```
-build/sbt package -Phive -Phive-thriftserver
+build/sbt clean package -Phive -Phive-thriftserver -DskipTests
+
+build/mvn -Phive -Phive-thriftserver -DskipTests  clean install
 ```
 
-### 运行测试
+### 插入数据
 
-```
+```bash
 ./bin/spark-sql
 
-> show version;
+# 插入数据
+> insert into b values(1,'a'),(2,'b'),(3,'c'),(4,'d');
+> insert into b values(1,'a'),(2,'b'),(3,'c'),(4,'d');
+> insert into b values(1,'a'),(2,'b'),(3,'c'),(4,'d');
+> insert into b values(1,'a'),(2,'b'),(3,'c'),(4,'d');
+> insert into b values(1,'a'),(2,'b'),(3,'c'),(4,'d');
+> insert into b values(1,'a'),(2,'b'),(3,'c'),(4,'d');
+> insert into b values(1,'a'),(2,'b'),(3,'c'),(4,'d');
+> insert into b values(1,'a'),(2,'b'),(3,'c'),(4,'d');
 > quit;
+```
+
+压缩为4个文件
+
+```
+# 压缩为4个文件
+> compact table b into 4 files;
+```
+
+默认压缩
+
+按照spark.files.maxPartitionBytes指定的值128MB进行分区
+
+```
+> compact table b;
 ```
 
 结果示意
