@@ -30,7 +30,7 @@ classes/
 /out/
 
 # temp ignore
-*.log*
+#*.log*
 *.cache
 *.diff
 *.patch
