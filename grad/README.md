@@ -58,7 +58,7 @@ spark-sql_2.12-3.1.1-tests.jar \
 > spark.q38.log 2>&1
 ```
 
-运行q38结果示意如下，详细输出日志请见本目录下的spark.q38.log
+运行q38结果示意如下，详细输出日志请见本目录下的spark.q38.log，链接为https://github.com/freecow/geektime-bigdata/blob/main/grad/spark.q38.log
 
 ![image-20220810200854214](http://pic-bkt.oss-cn-beijing.aliyuncs.com/blog/2022-08-10-120912.png)
 
